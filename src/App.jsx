@@ -35,7 +35,6 @@ function App() {
         formData.append("resume", file);
       }
 
-      // ⏳ Handle Render delay (timeout fix)
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 60000);
 

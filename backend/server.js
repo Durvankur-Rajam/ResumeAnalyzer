@@ -40,9 +40,8 @@ const client = new OpenAI({
   },
 });
 
-// ✅ Health check route
 app.get("/", (req, res) => {
-  res.send("Backend is running 🚀");
+  res.send("Backend is running");
 });
 
 app.post("/analyze", upload, async (req, res) => {
@@ -63,27 +62,38 @@ app.post("/analyze", upload, async (req, res) => {
         const pdfData = await pdfParse(dataBuffer);
         const resumeText = pdfData.text;
 
-        // ✅ Safe delete
         if (fs.existsSync(file.path)) {
           fs.unlinkSync(file.path);
         }
 
-        const prompt = `
+const prompt = `
 You are an experienced technical recruiter.
 
-Strictly return ONLY raw JSON.
-Do NOT include markdown, explanations, or extra text.
-Ensure valid JSON format with proper quotes.
+STRICT RULE:
+If the candidate does NOT have relevant technical skills for the role,
+they MUST be rated as "Not Fit" with a low score (below 40).
 
-IMPORTANT:
-- Score must be between 0 and 100 (NOT 0–1)
+Do NOT give high scores for irrelevant profiles, even if they have many years of experience.
 
 Evaluate based on:
-- Skill match (highest weight)
-- Relevant experience
-- Experience level fit
-- Depth of work
-- Missing critical skills
+
+1. Skill Match (CRITICAL)
+   - If required technical skills are missing → heavily penalize
+
+2. Domain Relevance (VERY IMPORTANT)
+   - If candidate is from a different domain (e.g., sales, marketing, non-tech),
+     assign a low score regardless of experience
+
+3. Experience Relevance
+   - Only count experience relevant to the job role
+
+4. Experience Level Fit
+   - Prefer candidates matching required experience (0–2 years)
+
+5. Depth of Work
+   - Real projects > generic experience
+
+---
 
 Job Description:
 ${jd}
@@ -91,16 +101,28 @@ ${jd}
 Resume:
 ${resumeText}
 
-Return JSON:
+---
+
+Return ONLY JSON:
+
 {
-  "score": number,
+  "score": number (0–100),
   "strengths": ["", "", ""],
   "gaps": ["", "", ""],
   "recommendation": "Strong Fit" | "Moderate Fit" | "Not Fit"
 }
+
+---
+
+SCORING RULES:
+- 80–100: Strong Fit (relevant + strong match)
+- 60–79: Moderate Fit
+- BELOW 40: Not Fit (irrelevant domain or missing core skills)
+
+Be strict. Do NOT reward irrelevant experience.
 `;
 
-        // ✅ Retry logic
+        
         let response;
         try {
           response = await client.chat.completions.create({
@@ -119,7 +141,6 @@ Return JSON:
 
         console.log("RAW RESPONSE:", responseText);
 
-        // ✅ Clean + extract JSON
         let cleaned = responseText.replace(/```json|```/g, "").trim();
         const match = cleaned.match(/\{[\s\S]*\}/);
 
@@ -133,7 +154,6 @@ Return JSON:
           }
         }
 
-        // ✅ Fallback
         if (!parsed) {
           parsed = {
             score: 0,
@@ -143,7 +163,6 @@ Return JSON:
           };
         }
 
-        // ✅ Normalize score (0.85 → 85)
         if (parsed.score <= 1) {
           parsed.score = Math.round(parsed.score * 100);
         }
@@ -166,7 +185,6 @@ Return JSON:
       }
     }
 
-    // ✅ Sort by score
     results.sort((a, b) => (b.score || 0) - (a.score || 0));
 
     res.json(results);
@@ -177,7 +195,6 @@ Return JSON:
   }
 });
 
-// ✅ PORT FIX (Render compatible)
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
