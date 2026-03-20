@@ -1,16 +1,32 @@
-# React + Vite
+# AI Resume Analyzer
+Live Application: https://resume-analyzer-psi-brown.vercel.app/
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+---
 
-Currently, two official plugins are available:
+The AI Resume Analyzer allows users to input a job description and upload multiple resumes in PDF format. The system processes each resume, evaluates it using a Large Language Model (LLM), and generates a structured output including a score, strengths, gaps, and a hiring recommendation.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Candidates are automatically ranked based on their scores, providing a clear comparison similar to an Applicant Tracking System (ATS).
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## How It Works
 
-## Expanding the ESLint configuration
+1. User enters a job description
+2. Uploads one or more resumes
+3. Backend extracts text from PDFs
+4. Data is sent to the LLM for evaluation
+5. LLM returns structured JSON output
+6. Backend parses and normalizes the response
+7. Candidates are ranked based on score
+8. Results are displayed in the UI
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+---
+
+## Tech Stack
+Frontend - React  
+
+Backend - Node.js and express.js 
+
+AI Integration: OpenRouter (LLM API – Mixtral model) 
+
+Tools - ChatGPT, Claud, VS Code, Vercel, Rerender
