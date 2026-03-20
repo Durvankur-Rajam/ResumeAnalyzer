@@ -35,10 +35,17 @@ function App() {
         formData.append("resume", file);
       }
 
-      const res = await fetch("https://resumeanalyzer-x5xb.onrender.com", {
+      // ⏳ Handle Render delay (timeout fix)
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 60000);
+
+      const res = await fetch("https://resumeanalyzer-x5xb.onrender.com/analyze", {
         method: "POST",
         body: formData,
+        signal: controller.signal,
       });
+
+      clearTimeout(timeout);
 
       if (!res.ok) throw new Error("Backend error");
 
@@ -47,7 +54,12 @@ function App() {
 
     } catch (err) {
       console.error(err);
-      setError("Failed to analyze resumes.");
+
+      if (err.name === "AbortError") {
+        setError("Server is waking up... please wait a few seconds and try again.");
+      } else {
+        setError("Failed to analyze resumes. Please try again.");
+      }
     }
 
     setLoading(false);
@@ -94,10 +106,12 @@ function App() {
             <div key={index} style={styles.resultItem}>
               <h4>
                 #{index + 1} - {r.name}
-                {index === 0 && <span style={{ color: "green" }}> 🏆 Top Candidate</span>}
+                {index === 0 && (
+                  <span style={{ color: "green" }}> 🏆 Top Candidate</span>
+                )}
               </h4>
 
-              <p><b>Score:</b> {r.score}</p>
+              <p><b>Score:</b> {r.score}%</p>
 
               <p>
                 <b>Recommendation:</b>{" "}
@@ -109,14 +123,22 @@ function App() {
                         : r.recommendation === "Moderate Fit"
                         ? "orange"
                         : "red",
+                    fontWeight: "bold",
                   }}
                 >
                   {r.recommendation}
                 </span>
               </p>
 
-              <p><b>Strengths:</b> {r.strengths?.join(", ") || "N/A"}</p>
-              <p><b>Gaps:</b> {r.gaps?.join(", ") || "N/A"}</p>
+              <p>
+                <b>Strengths:</b>{" "}
+                {r.strengths?.length ? r.strengths.join(", ") : "N/A"}
+              </p>
+
+              <p>
+                <b>Gaps:</b>{" "}
+                {r.gaps?.length ? r.gaps.join(", ") : "N/A"}
+              </p>
 
               <hr />
             </div>

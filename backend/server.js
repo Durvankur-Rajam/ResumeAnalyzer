@@ -17,7 +17,12 @@ const require = createRequire(import.meta.url);
 const pdfParse = require("pdf-parse");
 
 const app = express();
-app.use(cors());
+
+// ✅ CORS FIX
+app.use(cors({
+  origin: "*",
+}));
+
 app.use(express.json());
 
 const upload = multer({
@@ -35,6 +40,11 @@ const client = new OpenAI({
   },
 });
 
+// ✅ Health check route
+app.get("/", (req, res) => {
+  res.send("Backend is running 🚀");
+});
+
 app.post("/analyze", upload, async (req, res) => {
   try {
     const jd = req.body.jd;
@@ -47,11 +57,16 @@ app.post("/analyze", upload, async (req, res) => {
 
     for (let file of req.files) {
       try {
+        console.log("Processing:", file.originalname);
+
         const dataBuffer = fs.readFileSync(file.path);
         const pdfData = await pdfParse(dataBuffer);
         const resumeText = pdfData.text;
 
-        fs.unlinkSync(file.path);
+        // ✅ Safe delete
+        if (fs.existsSync(file.path)) {
+          fs.unlinkSync(file.path);
+        }
 
         const prompt = `
 You are an experienced technical recruiter.
@@ -128,7 +143,7 @@ Return JSON:
           };
         }
 
-        // ✅ FIX: Normalize score (0.85 → 85)
+        // ✅ Normalize score (0.85 → 85)
         if (parsed.score <= 1) {
           parsed.score = Math.round(parsed.score * 100);
         }
@@ -162,4 +177,7 @@ Return JSON:
   }
 });
 
-app.listen(5000, () => console.log("✅ Server running on port 5000"));
+// ✅ PORT FIX (Render compatible)
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
