@@ -67,59 +67,99 @@ app.post("/analyze", upload, async (req, res) => {
         }
 
 const prompt = `
-You are an experienced technical recruiter.
+You are a senior technical recruiter.
 
-STRICT RULE:
-If the candidate does NOT have relevant technical skills for the role,
-they MUST be rated as "Not Fit" with a low score (below 40).
+Follow this STRICT evaluation pipeline.
 
-Do NOT give high scores for irrelevant profiles, even if they have many years of experience.
+-------------------------------
+STEP 1: Extract Required Skills
+-------------------------------
+From the Job Description, extract:
+- Core technical skills (mandatory)
+- Secondary skills (good to have)
 
-Evaluate based on:
+These are your reference for evaluation.
 
-1. Skill Match (CRITICAL)
-   - If required technical skills are missing → heavily penalize
+-------------------------------
+STEP 2: Check Domain Relevance
+-------------------------------
+- If the candidate is NOT from a technical/software domain:
+  → score = 0–40
+  → recommendation = "Not Fit"
+  → STOP evaluation
 
-2. Domain Relevance (VERY IMPORTANT)
-   - If candidate is from a different domain (e.g., sales, marketing, non-tech),
-     assign a low score regardless of experience
+-------------------------------
+STEP 3: Skill Matching (CRITICAL)
+-------------------------------
+Compare resume skills with REQUIRED skills from JD.
 
-3. Experience Relevance
-   - Only count experience relevant to the job role
+Calculate match quality:
+- High Match (70–100% skills matched)
+- Medium Match (40–70%)
+- Low Match (<40%)
 
-4. Experience Level Fit
-   - Prefer candidates matching required experience (0–2 years)
+Scoring:
+- High Match → 75–100
+- Medium Match → 60–75
+- Low Match → 0–60
 
-5. Depth of Work
-   - Real projects > generic experience
+IMPORTANT:
+- Missing core skills → heavily penalize
+- Mention EXACT matching technologies (React, Node, Java, etc.)
 
----
+-------------------------------
+STEP 4: Experience Relevance
+-------------------------------
+- Only count relevant experience
+- Ignore unrelated experience
 
+-------------------------------
+STEP 5: Experience Level Fit
+-------------------------------
+For roles requiring 0–2 years:
+- 0–2 → ideal
+- 3–5 → slight penalty
+- 5+ → reduce score (overqualified)
+
+-------------------------------
+STEP 6: Depth of Work
+-------------------------------
+- Real projects using required tech → increase score
+- Only listed skills without proof → reduce score
+
+-------------------------------
+FINAL RULES
+-------------------------------
+- Skills > experience
+- Irrelevant domain → ALWAYS low score
+- Be strict like a real recruiter
+
+-------------------------------
+INPUT
+-------------------------------
 Job Description:
 ${jd}
 
 Resume:
 ${resumeText}
 
----
-
-Return ONLY JSON:
-
+-------------------------------
+OUTPUT (STRICT JSON ONLY)
+-------------------------------
 {
-  "score": number (0–100),
-  "strengths": ["", "", ""],
-  "gaps": ["", "", ""],
+  "score": number between 0 and 100,
+  "strengths": [
+    "mention specific matching skills from JD",
+    "mention relevant experience or project",
+    "mention strong technical alignment"
+  ],
+  "gaps": [
+    "missing key required skill",
+    "lack of relevant experience",
+    "missing important tool/framework"
+  ],
   "recommendation": "Strong Fit" | "Moderate Fit" | "Not Fit"
 }
-
----
-
-SCORING RULES:
-- 80–100: Strong Fit (relevant + strong match)
-- 60–79: Moderate Fit
-- BELOW 40: Not Fit (irrelevant domain or missing core skills)
-
-Be strict. Do NOT reward irrelevant experience.
 `;
 
         
