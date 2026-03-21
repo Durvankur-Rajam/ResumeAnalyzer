@@ -1,4 +1,5 @@
 import { useState } from "react";
+import "./App.css";
 
 function App() {
   const [jd, setJd] = useState("");
@@ -38,11 +39,14 @@ function App() {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 60000);
 
-      const res = await fetch("https://resumeanalyzer-x5xb.onrender.com/analyze", {
-        method: "POST",
-        body: formData,
-        signal: controller.signal,
-      });
+      const res = await fetch(
+        "https://resumeanalyzer-x5xb.onrender.com/analyze",
+        {
+          method: "POST",
+          body: formData,
+          signal: controller.signal,
+        }
+      );
 
       clearTimeout(timeout);
 
@@ -50,12 +54,13 @@ function App() {
 
       const data = await res.json();
       setResults(data);
-
     } catch (err) {
       console.error(err);
 
       if (err.name === "AbortError") {
-        setError("Server is waking up... please wait a few seconds and try again.");
+        setError(
+          "Server is waking up... please wait a few seconds and try again."
+        );
       } else {
         setError("Failed to analyze resumes. Please try again.");
       }
@@ -65,136 +70,95 @@ function App() {
   };
 
   return (
-    <div style={styles.container}>
-      <h2 style={styles.title}>AI Resume Analyzer</h2>
+    <div className="container">
+      <div className="cardMain">
+        <h2 className="title">AI Resume Analyzer</h2>
 
-      <textarea
-        placeholder="Paste Job Description..."
-        value={jd}
-        onChange={(e) => setJd(e.target.value)}
-        rows={6}
-        style={styles.textarea}
-      />
+        <textarea
+          placeholder="Paste Job Description..."
+          value={jd}
+          onChange={(e) => setJd(e.target.value)}
+          rows={6}
+          className="textarea"
+        />
 
-      <input
-        type="file"
-        accept=".pdf"
-        multiple
-        onChange={(e) => setFiles(Array.from(e.target.files))}
-      />
+        <label className="uploadBox">
+          📂 Upload Resumes (PDF)
+          <input
+            type="file"
+            accept=".pdf"
+            multiple
+            hidden
+            onChange={(e) => setFiles(Array.from(e.target.files))}
+          />
+        </label>
 
-      {files.length > 0 && (
-        <div style={styles.fileList}>
-          {files.map((f, i) => (
-            <p key={i}>📄 {f.name}</p>
-          ))}
-        </div>
-      )}
+        {files.length > 0 && (
+          <div className="fileList">
+            {files.map((f, i) => (
+              <p key={i}>📄 {f.name}</p>
+            ))}
+          </div>
+        )}
 
-      <button onClick={handleAnalyze} style={styles.button} disabled={loading}>
-        {loading ? "Analyzing..." : "Analyze Resumes"}
-      </button>
+        <button
+          onClick={handleAnalyze}
+          className="button"
+          disabled={loading}
+        >
+          {loading ? "Analyzing..." : "Analyze Resumes"}
+        </button>
 
-      {error && <p style={styles.error}>{error}</p>}
+        {loading && <div className="loader"></div>}
 
-      {results && (
-        <div style={styles.card}>
-          <h3>Ranking Results</h3>
+        {error && <p className="error">{error}</p>}
 
-          {results.map((r, index) => (
-            <div key={index} style={styles.resultItem}>
-              <h4>
-                #{index + 1} - {r.name}
-                {index === 0 && (
-                  <span style={{ color: "green" }}> 🏆 Top Candidate</span>
-                )}
-              </h4>
+        {results && (
+          <div className="card">
+            <h3>Ranking Results</h3>
 
-              <p><b>Score:</b> {r.score}%</p>
+            {results.map((r, index) => (
+              <div key={index} className="resultItem">
+                <h4>
+                  #{index + 1} - {r.name}
+                  {index === 0 && (
+                    <span className="top"> 🏆 Top Candidate</span>
+                  )}
+                </h4>
 
-              <p>
-                <b>Recommendation:</b>{" "}
-                <span
-                  style={{
-                    color:
+                <p><b>Score:</b> {r.score}%</p>
+
+                <p>
+                  <b>Recommendation:</b>{" "}
+                  <span
+                    className={`tag ${
                       r.recommendation === "Strong Fit"
                         ? "green"
                         : r.recommendation === "Moderate Fit"
                         ? "orange"
-                        : "red",
-                    fontWeight: "bold",
-                  }}
-                >
-                  {r.recommendation}
-                </span>
-              </p>
+                        : "red"
+                    }`}
+                  >
+                    {r.recommendation}
+                  </span>
+                </p>
 
-              <p>
-                <b>Strengths:</b>{" "}
-                {r.strengths?.length ? r.strengths.join(", ") : "N/A"}
-              </p>
+                <p>
+                  <b>Strengths:</b>{" "}
+                  {r.strengths?.length ? r.strengths.join(", ") : "N/A"}
+                </p>
 
-              <p>
-                <b>Gaps:</b>{" "}
-                {r.gaps?.length ? r.gaps.join(", ") : "N/A"}
-              </p>
-
-              <hr />
-            </div>
-          ))}
-        </div>
-      )}
+                <p>
+                  <b>Gaps:</b>{" "}
+                  {r.gaps?.length ? r.gaps.join(", ") : "N/A"}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
-
-const styles = {
-  container: {
-    maxWidth: "700px",
-    margin: "auto",
-    padding: "20px",
-    fontFamily: "Arial",
-  },
-  title: {
-    textAlign: "center",
-  },
-  textarea: {
-    width: "100%",
-    marginBottom: "10px",
-    padding: "10px",
-    borderRadius: "6px",
-    border: "1px solid #ccc",
-  },
-  button: {
-    width: "100%",
-    padding: "12px",
-    marginTop: "10px",
-    backgroundColor: "#4CAF50",
-    color: "white",
-    border: "none",
-    borderRadius: "6px",
-    cursor: "pointer",
-    fontSize: "16px",
-  },
-  error: {
-    color: "red",
-    marginTop: "10px",
-  },
-  fileList: {
-    marginTop: "10px",
-    fontSize: "14px",
-    color: "#555",
-  },
-  card: {
-    marginTop: "20px",
-    padding: "15px",
-    borderRadius: "10px",
-    background: "#f5f5f5",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-  },
-  resultItem: {
-    marginBottom: "15px",
-  },
-};
 
 export default App;
